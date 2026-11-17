@@ -7,7 +7,7 @@
 - Leo Wu
 - Haoran Zhang
 - Cola He
-- Leo Xu
+- Zefeng Xu
 
 ## Project Description
 ### Domain
@@ -25,3 +25,4 @@ serves as a prerequisite.
 and editing purpose in the future.
 
 ## User Cases
+- 
