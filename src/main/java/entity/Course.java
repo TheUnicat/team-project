@@ -2,13 +2,13 @@ package entity;
 import java.util.*;
 
 public class Course {
-    private final String name;
+    private final String courseId;
     private final int year;
     private List<Course> prerequisites;
     private List<Course> corequisites;
 
-    public Course(String name, int year) {
-        this.name = name;
+    public Course(String courseId, int year) {
+        this.courseId = courseId;
         this.year = year;
     }
 
@@ -24,8 +24,8 @@ public class Course {
         return year;
     }
 
-    public String getName() {
-        return name;
+    public String getCourseId() {
+        return courseId;
     }
 
     public List<Course> getPrerequisites() {
