@@ -7,7 +7,7 @@
 - Leo Wu
 - Haoran Zhao
 - Cola He
-- Leo Xu
+- Zefeng Xu
 
 ## Project Description
 ### Domain
