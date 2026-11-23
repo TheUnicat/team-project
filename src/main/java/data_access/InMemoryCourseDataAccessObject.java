@@ -33,7 +33,7 @@ public class InMemoryCourseDataAccessObject
     }
 
     private void addCourse(Course course) {
-        courses.put(course.getName(), course);
+        courses.put(course.getCourseId(), course);
     }
 
     @Override

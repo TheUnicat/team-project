@@ -39,6 +39,6 @@ public class SearchCourseInteractor
 
         presenter.prepareSuccessView(
                 new SearchCourseOutputData(
-                        course.get().getName()));
+                        course.get().getCourseId()));
     }
 }
