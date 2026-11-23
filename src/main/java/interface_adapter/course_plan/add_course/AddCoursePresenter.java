@@ -34,7 +34,7 @@ public class AddCoursePresenter
                         + " was added successfully.");
         state.setErrorMessage("");
 
-        viewModel.firePropertyChanged();
+        viewModel.notifyStateChanged();
     }
 
     @Override
@@ -45,6 +45,6 @@ public class AddCoursePresenter
         state.setSuccessMessage("");
         state.setErrorMessage(errorMessage);
 
-        viewModel.firePropertyChanged();
+        viewModel.notifyStateChanged();
     }
 }

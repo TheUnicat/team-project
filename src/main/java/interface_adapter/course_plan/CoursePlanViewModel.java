@@ -1,14 +1,13 @@
 package interface_adapter.course_plan;
 
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeSupport;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CoursePlanViewModel {
     public static final String VIEW_NAME = "course plan";
-    public static final String STATE_PROPERTY = "state";
 
-    private final PropertyChangeSupport support =
-            new PropertyChangeSupport(this);
+    private final List<CoursePlanViewModelListener> listeners =
+            new ArrayList<>();
 
     private CoursePlanState state =
             new CoursePlanState();
@@ -21,15 +20,14 @@ public class CoursePlanViewModel {
         this.state = state;
     }
 
-    public void firePropertyChanged() {
-        support.firePropertyChange(
-                STATE_PROPERTY,
-                null,
-                state);
+    public void addListener(
+            CoursePlanViewModelListener listener) {
+        listeners.add(listener);
     }
 
-    public void addPropertyChangeListener(
-            PropertyChangeListener listener) {
-        support.addPropertyChangeListener(listener);
+    public void notifyStateChanged() {
+        for (CoursePlanViewModelListener listener : listeners) {
+            listener.stateChanged();
+        }
     }
 }

@@ -9,8 +9,12 @@ public class Main {
 
         final JFrame application = appBuilder
                 .addCoursePlanView()
+                .addSearchCourseUseCase()
+                .addAddCourseUseCase()
                 .build();
 
+        application.pack();
+        application.setLocationRelativeTo(null);
         application.setVisible(true);
     }
 }

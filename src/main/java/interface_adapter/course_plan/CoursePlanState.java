@@ -9,6 +9,7 @@ public class CoursePlanState {
 
     private String successMessage = "";
     private String errorMessage = "";
+    private String selectedCourseId = "";
 
     public List<String> getPlannedCourses() {
         return new ArrayList<>(plannedCourses);
@@ -32,5 +33,13 @@ public class CoursePlanState {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public String getSelectedCourseId() {
+        return selectedCourseId;
+    }
+
+    public void setSelectedCourseId(String selectedCourseId) {
+        this.selectedCourseId = selectedCourseId;
     }
 }
