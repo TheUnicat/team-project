@@ -56,8 +56,41 @@ public class CourseAPI implements SearchCourseDataAccessInterface {
      * Only code and name are filled in search results.
      * Stays a record until the calendar's requirement text is turned into entity.Requirement objects.
      */
-    public record ProgramInfo(String code, String name, String description,
-                              String enrolmentRequirements, String completionRequirements) {
+    public static final class ProgramInfo {
+        private final String code;
+        private final String name;
+        private final String description;
+        private final String enrolmentRequirements;
+        private final String completionRequirements;
+
+        public ProgramInfo(String code, String name, String description,
+                           String enrolmentRequirements, String completionRequirements) {
+            this.code = code;
+            this.name = name;
+            this.description = description;
+            this.enrolmentRequirements = enrolmentRequirements;
+            this.completionRequirements = completionRequirements;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String getEnrolmentRequirements() {
+            return enrolmentRequirements;
+        }
+
+        public String getCompletionRequirements() {
+            return completionRequirements;
+        }
     }
 
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();

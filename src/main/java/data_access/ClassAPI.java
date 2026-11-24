@@ -29,21 +29,132 @@ public class ClassAPI {
     /**
      * The course in one term. sectionCode is F (fall), S (winter) or Y (full year).
      */
-    public record Offering(String code, String sectionCode, List<String> sessions, List<Section> sections) {
+    public static final class Offering {
+        private final String code;
+        private final String sectionCode;
+        private final List<String> sessions;
+        private final List<Section> sections;
+
+        public Offering(String code, String sectionCode, List<String> sessions, List<Section> sections) {
+            this.code = code;
+            this.sectionCode = sectionCode;
+            this.sessions = List.copyOf(sessions);
+            this.sections = List.copyOf(sections);
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getSectionCode() {
+            return sectionCode;
+        }
+
+        public List<String> getSessions() {
+            return sessions;
+        }
+
+        public List<Section> getSections() {
+            return sections;
+        }
     }
 
     /**
      * One lecture or tutorial or practical
      */
-    public record Section(String name, String type, List<String> instructors,
-                          int currentEnrolment, int maxEnrolment, int currentWaitlist,
-                          boolean cancelled, List<Meeting> meetings) {
+    public static final class Section {
+        private final String name;
+        private final String type;
+        private final List<String> instructors;
+        private final int currentEnrolment;
+        private final int maxEnrolment;
+        private final int currentWaitlist;
+        private final boolean cancelled;
+        private final List<Meeting> meetings;
+
+        public Section(String name, String type, List<String> instructors,
+                       int currentEnrolment, int maxEnrolment, int currentWaitlist,
+                       boolean cancelled, List<Meeting> meetings) {
+            this.name = name;
+            this.type = type;
+            this.instructors = List.copyOf(instructors);
+            this.currentEnrolment = currentEnrolment;
+            this.maxEnrolment = maxEnrolment;
+            this.currentWaitlist = currentWaitlist;
+            this.cancelled = cancelled;
+            this.meetings = List.copyOf(meetings);
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public List<String> getInstructors() {
+            return instructors;
+        }
+
+        public int getCurrentEnrolment() {
+            return currentEnrolment;
+        }
+
+        public int getMaxEnrolment() {
+            return maxEnrolment;
+        }
+
+        public int getCurrentWaitlist() {
+            return currentWaitlist;
+        }
+
+        public boolean isCancelled() {
+            return cancelled;
+        }
+
+        public List<Meeting> getMeetings() {
+            return meetings;
+        }
     }
 
     /**
      * One weekly meeting. building is a code like "BA"
      */
-    public record Meeting(DayOfWeek day, LocalTime start, LocalTime end, String building, String sessionCode) {
+    public static final class Meeting {
+        private final DayOfWeek day;
+        private final LocalTime start;
+        private final LocalTime end;
+        private final String building;
+        private final String sessionCode;
+
+        public Meeting(DayOfWeek day, LocalTime start, LocalTime end, String building, String sessionCode) {
+            this.day = day;
+            this.start = start;
+            this.end = end;
+            this.building = building;
+            this.sessionCode = sessionCode;
+        }
+
+        public DayOfWeek getDay() {
+            return day;
+        }
+
+        public LocalTime getStart() {
+            return start;
+        }
+
+        public LocalTime getEnd() {
+            return end;
+        }
+
+        public String getBuilding() {
+            return building;
+        }
+
+        public String getSessionCode() {
+            return sessionCode;
+        }
     }
 
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
