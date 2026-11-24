@@ -25,7 +25,30 @@ serves as a prerequisite.
 and editing purpose in the future.
 
 ## User Cases
-### Use Case 2
+## Use Case 1
+**Name**: Export Timetable as PDF
+
+**Primary Actor**: Student
+
+**Goal**: Save a copy of the timetable as a PDF for sharing, viewing later, or printing.
+
+**Preconditions**: The student has a timetable open in the application.
+
+**Trigger**: The student selects Export as PDF.
+
+**Success Outcome**: A PDF containing the student’s timetable is saved to the selected location on their computer.
+
+**Main Success Scenario**:
+1. The student selects Export as PDF from the timetable view.
+2. The application prompts the student to choose a file name and save location.
+3. The student confirms the file name and location.
+4. The application generates a PDF of the current timetable and saves it to the selected location.
+5. The application confirms that the PDF was saved successfully.
+
+**Alternative Flows**：
+- 3a. The student cancels. The save dialog closes and the student returns to the timetable view. No PDF is saved.
+- 4a. The application cannot generate or save the PDF. The application displays an error message. The student can retry the export.
+## Use Case 2
 **Name**: Track Graduation Progress 
 
 **Primary Actor**: Student 
