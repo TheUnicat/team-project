@@ -4,12 +4,14 @@ import java.util.*;
 public class Course {
     private final String courseId;
     private final int year;
+    private final boolean isFullYear;
     private List<Course> prerequisites;
     private List<Course> corequisites;
 
-    public Course(String courseId, int year) {
+    public Course(String courseId, int year, boolean isFullYear) {
         this.courseId = courseId;
         this.year = year;
+        this.isFullYear = isFullYear;
     }
 
     public void addPrerequisite(Course prereq) {
@@ -23,6 +25,8 @@ public class Course {
     public int getYear() {
         return year;
     }
+
+    public boolean getIsFullYear() { return isFullYear; }
 
     public String getCourseId() {
         return courseId;
