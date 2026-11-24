@@ -2,6 +2,8 @@ package data_access;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import entity.Course;
+import use_case.search_course.SearchCourseDataAccessInterface;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
  * Courses and programs from UofT (artsci / utsc / utm / engineering .calendar.utoronto.ca).
  * Each method makes one or two HTTP requests (about 0.3-0.8 s each), so call from a background thread.
  */
-public class CourseAPI {
+public class CourseAPI implements SearchCourseDataAccessInterface {
     /** Because this is the maximum size allowed by the api */
     public static final int PAGE_SIZE = 50;
 
@@ -50,11 +52,10 @@ public class CourseAPI {
         }
     }
 
-    public record CourseInfo(String code, String title, String prerequisite, String corequisite,
-                             String exclusion, String description) {
-    }
-
-    /** Only code and name are filled in search results. */
+    /**
+     * Only code and name are filled in search results.
+     * Stays a record until the calendar's requirement text is turned into entity.Requirement objects.
+     */
     public record ProgramInfo(String code, String name, String description,
                               String enrolmentRequirements, String completionRequirements) {
     }
@@ -64,10 +65,24 @@ public class CourseAPI {
 
     // ------------------------------------------------------------------ courses
 
+    /** One course with its description, e.g. "CSC148H1". Empty if no calendar has it. */
+    @Override
+    public Optional<Course> findCourseById(String courseId) {
+        String c = courseId.trim().toUpperCase();
+        for (Campus campus : campusesForCourse(c)) {
+            JsonNode data = get(campus, "courses", Map.of("filter[title]", c)).path("data");
+            if (!data.isEmpty()) {
+                return Optional.of(toCourse(data.get(0), campus));
+            }
+        }
+        return Optional.empty();
+    }
+
     /**
-     * Courses whose code starts with the query ("CSC", "CSC1") or title contains it ("calculus")
+     * Courses whose code starts with the query ("CSC", "CSC1") or title contains it ("calculus"),
+     * sorted by code, without descriptions. page starts at 0.
      */
-    public List<CourseInfo> searchCourses(Campus campus, String query, int page) {
+    public List<Course> searchCourses(Campus campus, String query, int page) {
         Map<String, String> q = new LinkedHashMap<>();
         String text = query.trim();
         if (!text.isEmpty()) {
@@ -81,28 +96,16 @@ public class CourseAPI {
             q.put("filter[name][condition][value]", text);
             q.put("filter[name][condition][memberOf]", "any");
         }
-        q.put("fields[node--courses]", "title,field_course_title,field_prerequisite,field_corequisite,field_exclusion");
+        q.put("fields[node--courses]", "title,field_course_title,field_prerequisite,field_corequisite");
         q.put("sort", "title");
         q.put("page[offset]", String.valueOf(page * PAGE_SIZE));
         q.put("page[limit]", String.valueOf(PAGE_SIZE));
 
-        List<CourseInfo> courses = new ArrayList<>();
+        List<Course> courses = new ArrayList<>();
         for (JsonNode item : get(campus, "courses", q).path("data")) {
             courses.add(toCourse(item, campus));
         }
         return courses;
-    }
-
-    /** One course with its description from the code. Empty if no calendar has it. */
-    public Optional<CourseInfo> getCourse(String code) {
-        String c = code.trim().toUpperCase();
-        for (Campus campus : campusesForCourse(c)) {
-            JsonNode data = get(campus, "courses", Map.of("filter[title]", c)).path("data");
-            if (!data.isEmpty()) {
-                return Optional.of(toCourse(data.get(0), campus));
-            }
-        }
-        return Optional.empty();
     }
 
     // ------------------------------------------------------------------ programs
@@ -127,7 +130,7 @@ public class CourseAPI {
         return programs;
     }
 
-    /** One program with  requirements */
+    /** One program with requirements */
     public Optional<ProgramInfo> getProgram(String code) {
         String c = code.trim().toUpperCase();
         Campus campus = campusForProgram(c);
@@ -135,12 +138,49 @@ public class CourseAPI {
         return data.isEmpty() ? Optional.empty() : Optional.of(toProgram(data.get(0), campus));
     }
 
-    // ------------------------------------------------------------------ helper for the UI
+    // ------------------------------------------------------------------ converting calendar data
+
+    /** Builds a Course. The calendar does not store year, credits or full-year; they come from the code. */
+    private static Course toCourse(JsonNode item, Campus campus) {
+        String code = attr(item, "title");
+        String prerequisite = attr(item, "field_prerequisite");
+        String corequisite = attr(item, "field_corequisite");
+        boolean fullYear = code.length() > 6 && code.charAt(6) == 'Y';   // CSC148H1 = half year, MAT133Y1 = full year
+        return new Course(
+                code,
+                attr(item, "field_course_title"),
+                yearOf(code),
+                fullYear,
+                fullYear ? 1.0 : 0.5,
+                stripTags(prerequisite),
+                courseCodesIn(prerequisite),
+                stripTags(corequisite),
+                courseCodesIn(corequisite),
+                stripTags(attr(item, campus.courseDescriptionField)));
+    }
+
+    /**
+     * The year level is the code's 4th character: a digit at St. George and Mississauga (CSC148H1 is 1st year),
+     * a letter at Scarborough (CSCA48H3: A = 1st year ... D = 4th year).
+     */
+    private static int yearOf(String code) {
+        if (code.length() < 4) {
+            return 0;
+        }
+        char c = code.charAt(3);
+        if (Character.isDigit(c)) {
+            return Math.max(1, c - '0');
+        }
+        if (c >= 'A' && c <= 'D') {
+            return c - 'A' + 1;
+        }
+        return 0;
+    }
 
     private static final Pattern COURSE_CODE = Pattern.compile("\\b[A-Z]{3}[A-Z0-9]\\d{2}[HY]\\d\\b");
 
-    /** Course codes mentioned in a requirement field */
-    public static List<String> courseCodesIn(String html) {
+    /** Course codes mentioned in a requirement field, in order, without repeats, e.g. [CSC108H1]. */
+    private static List<String> courseCodesIn(String html) {
         LinkedHashSet<String> codes = new LinkedHashSet<>();
         Matcher m = COURSE_CODE.matcher(html.replaceAll("<[^>]+>", " "));
         while (m.find()) {
@@ -149,9 +189,36 @@ public class CourseAPI {
         return new ArrayList<>(codes);
     }
 
-    // ------------------------------------------------------------------ internals
+    /** The calendar's HTML without tags, e.g. "<a href='/course/CSC108H1'>CSC108H1</a>/ ..." becomes "CSC108H1/ ...". */
+    private static String stripTags(String html) {
+        return html.replaceAll("<[^>]+>", "")
+                .replace("&nbsp;", " ").replace("&#8203;", "").replace("&amp;", "&")
+                .trim();
+    }
 
-    /** Course codes end in 3 at Scarborough, 5 at Mississauga, 1 at St. George  */
+    private static ProgramInfo toProgram(JsonNode item, Campus campus) {
+        String code = attr(item, "field_post_code");
+        return new ProgramInfo(
+                code,
+                programName(attr(item, "title"), code),
+                attr(item, campus.programDescriptionField),
+                attr(item, "field_enrolment_requirements"),
+                attr(item, campus.completionField));
+    }
+
+    /** Calendar titles end with the code, e.g. "Greek Minor (Arts Program) - ASMIN2123"; remove it. */
+    private static String programName(String title, String code) {
+        for (String suffix : new String[]{" - " + code, " (" + code + ")"}) {
+            if (!code.isEmpty() && title.endsWith(suffix)) {
+                return title.substring(0, title.length() - suffix.length()).trim();
+            }
+        }
+        return title;
+    }
+
+    // ------------------------------------------------------------------ choosing the calendar
+
+    /** Course codes end in 3 at Scarborough, 5 at Mississauga, 1 at St. George (Arts & Science or Engineering). */
     private static List<Campus> campusesForCourse(String code) {
         if (code.endsWith("3")) {
             return List.of(Campus.SCARBOROUGH);
@@ -176,38 +243,11 @@ public class CourseAPI {
         return Campus.ARTS_AND_SCIENCE;
     }
 
-    private static CourseInfo toCourse(JsonNode item, Campus campus) {
-        return new CourseInfo(
-                attr(item, "title"),
-                attr(item, "field_course_title"),
-                attr(item, "field_prerequisite"),
-                attr(item, "field_corequisite"),
-                attr(item, "field_exclusion"),
-                attr(item, campus.courseDescriptionField));
-    }
-
-    private static ProgramInfo toProgram(JsonNode item, Campus campus) {
-        String code = attr(item, "field_post_code");
-        return new ProgramInfo(
-                code,
-                programName(attr(item, "title"), code),
-                attr(item, campus.programDescriptionField),
-                attr(item, "field_enrolment_requirements"),
-                attr(item, campus.completionField));
-    }
-
-    /** Calendar titles end with the code, e.g. "Greek Minor (Arts Program) - ASMIN2123"; remove it. */
-    private static String programName(String title, String code) {
-        for (String suffix : new String[]{" - " + code, " (" + code + ")"}) {
-            if (!code.isEmpty() && title.endsWith(suffix)) {
-                return title.substring(0, title.length() - suffix.length()).trim();
-            }
-        }
-        return title;
-    }
+    // ------------------------------------------------------------------ HTTP and JSON
 
     /**
      * One attribute as text. The calendars store text as {"value": "..."}, a plain string,
+     * a list of strings, null, or the string "null".
      */
     private static String attr(JsonNode item, String field) {
         JsonNode v = item.path("attributes").path(field);
