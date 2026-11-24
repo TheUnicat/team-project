@@ -26,10 +26,10 @@ public class InMemoryCourseDataAccessObject
         this.coursePlan = new CoursePlan();
         this.courses = new HashMap<>();
 
-        addCourse(new Course("CSC207", 2));
-        addCourse(new Course("CSC209", 2));
-        addCourse(new Course("CSC263", 2));
-        addCourse(new Course("CSC301", 3));
+        addCourse(new Course("CSC207", 2, false, 0.5));
+        addCourse(new Course("CSC209", 2, false, 0.5));
+        addCourse(new Course("CSC263", 2, false, 0.5));
+        addCourse(new Course("CSC301", 3, false, 0.5));
     }
 
     private void addCourse(Course course) {
