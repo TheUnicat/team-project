@@ -4,11 +4,18 @@ import entity.CourseSession;
 import interface_adapter.course_plan.CoursePlanState;
 import interface_adapter.course_plan.CoursePlanViewModel;
 import interface_adapter.course_plan.CoursePlanViewModelListener;
+import interface_adapter.course_plan.ExportTimetablePdfController;
 import interface_adapter.course_plan.add_course.AddCourseController;
 import interface_adapter.course_plan.search_course.SearchCourseController;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
 
 public class CoursePlanView extends JPanel
         implements CoursePlanViewModelListener {
@@ -17,6 +24,7 @@ public class CoursePlanView extends JPanel
             new Color(0, 128, 0);
 
     private final CoursePlanViewModel viewModel;
+    private final ExportTimetablePdfController exportController;
     private AddCourseController addCourseController;
     private SearchCourseController searchCourseController;
 
@@ -49,8 +57,9 @@ public class CoursePlanView extends JPanel
     private final JLabel statusLabel =
             new JLabel(" ");
 
-    public CoursePlanView(CoursePlanViewModel viewModel) {
+    public CoursePlanView(CoursePlanViewModel viewModel, ExportTimetablePdfController exportController) {
         this.viewModel = viewModel;
+        this.exportController = exportController;
 
         viewModel.addListener(this);
 
@@ -100,6 +109,12 @@ public class CoursePlanView extends JPanel
                 new JScrollPane(planList),
                 BorderLayout.CENTER);
 
+        final JButton exportButton = new JButton("Export as PDF");
+        exportButton.addActionListener(event -> exportTimetable());
+        final JPanel planActions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        planActions.add(exportButton);
+        planPanel.add(planActions, BorderLayout.SOUTH);
+
         add(controls, BorderLayout.NORTH);
         add(planPanel, BorderLayout.CENTER);
         add(statusLabel, BorderLayout.SOUTH);
@@ -124,6 +139,36 @@ public class CoursePlanView extends JPanel
     private void search() {
         searchCourseController.execute(
                 courseIdField.getText());
+    }
+
+    private void exportTimetable() {
+        final JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Export Timetable as PDF");
+        chooser.setFileFilter(new FileNameExtensionFilter("PDF files", "pdf"));
+        chooser.setSelectedFile(new File("timetable.pdf"));
+        if (chooser.showSaveDialog(this) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+
+        final Path selected = chooser.getSelectedFile().toPath();
+        final String fileName = selected.getFileName().toString();
+        final Path destination = fileName.toLowerCase(Locale.ROOT).endsWith(".pdf")
+                ? selected : selected.resolveSibling(fileName + ".pdf");
+
+        if (Files.isRegularFile(destination) && JOptionPane.showConfirmDialog(
+                this, "Replace " + destination.getFileName() + "?",
+                "Confirm Replacement", JOptionPane.YES_NO_OPTION) != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        try {
+            exportController.execute(destination);
+            JOptionPane.showMessageDialog(this, "Timetable saved to " + destination.toAbsolutePath());
+        }
+        catch (IOException | SecurityException exception) {
+            JOptionPane.showMessageDialog(this, "Could not save the timetable PDF. Choose another location or try again.",
+                    "PDF Export Failed", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     @Override

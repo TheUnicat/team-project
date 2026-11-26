@@ -4,6 +4,7 @@ import data_access.InMemoryCourseDataAccessObject;
 import data_access.InMemoryUserDataAccessObject;
 import interface_adapter.ViewManagerModel;
 import interface_adapter.course_plan.CoursePlanViewModel;
+import interface_adapter.course_plan.ExportTimetablePdfController;
 import interface_adapter.course_plan.add_course.AddCourseController;
 import interface_adapter.course_plan.add_course.AddCoursePresenter;
 import interface_adapter.course_plan.search_course.SearchCourseController;
@@ -15,6 +16,8 @@ import interface_adapter.signup.SignupController;
 import interface_adapter.signup.SignupPresenter;
 import interface_adapter.signup.SignupViewModel;
 import use_case.add_course.AddCourseInteractor;
+import use_case.export_timetable_pdf.ExportTimetablePdfInteractor;
+import use_case.export_timetable_pdf.TimetablePdfFileWriter;
 import use_case.login.LoginInteractor;
 import use_case.search_course.SearchCourseInteractor;
 import use_case.signup.SignupInteractor;
@@ -65,8 +68,12 @@ public class AppBuilder {
 
     public AppBuilder addCoursePlanView() {
         coursePlanViewModel = new CoursePlanViewModel();
+        final ExportTimetablePdfInteractor exportInteractor =
+                new ExportTimetablePdfInteractor(new TimetablePdfFileWriter());
+        final ExportTimetablePdfController exportController =
+                new ExportTimetablePdfController(exportInteractor, coursePlanViewModel);
         coursePlanView =
-                new CoursePlanView(coursePlanViewModel);
+                new CoursePlanView(coursePlanViewModel, exportController);
 
         rootPanel.add(
                 coursePlanView,
